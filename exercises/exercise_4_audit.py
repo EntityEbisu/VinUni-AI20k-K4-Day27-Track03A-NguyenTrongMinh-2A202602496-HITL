@@ -18,9 +18,16 @@ Approach:
     - Implement the one-line body of `audit()`. Everything else (graph wiring,
       checkpointer setup, interrupt/resume loop) is already done for you.
 
-TODOs to complete (10 total): the audit() body, ONE AuditEntry per node for
+Done (10 TODOs filled): the audit() body, ONE AuditEntry per node for
 analyze/route/commit/auto_approve/synthesize, TWO each for human_approval and
 escalate (before + after the interrupt).
+
+One deliberate addition beyond the TODO list: `audit()` skips a duplicate
+`decision="pending"` row for the same action. LangGraph re-runs a node from the
+top when it resumes, so the code BEFORE interrupt() executes twice and would
+otherwise write the "before interrupt" row twice (see report.md, mục 6.4).
+For that guard to work, every pre-interrupt row must use decision="pending" —
+the branch itself is already logged by `route`.
 """
 
 from __future__ import annotations
