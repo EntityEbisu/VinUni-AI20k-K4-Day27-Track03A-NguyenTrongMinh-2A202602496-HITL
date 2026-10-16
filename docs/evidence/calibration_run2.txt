@@ -1,0 +1,12 @@
+--- PR#1 (feat: add priority field to tasks) — kỳ vọng 58-72% (human_approval)
+    confidence = 0.65  risk_level = med
+    reasoning  = Không có tín hiệu rủi ro cao (BƯỚC 1): không xác thực, không secret, không SQL injection (parameterized queries đúng), không logic phức tạp. Tuy nhiên thuộc nhóm 'thay đổi vừa' (BƯỚC 2): đổi schema DB + thay đổi API công khai (thêm option CLI, thay đổi đầu ra list) + logic mới chưa có test, nên đặt 0.65 trong dải 0.60–0.72.
+    risks      = ["storage.py SCHEMA dùng CREATE TABLE IF NOT EXISTS — DB đã tồn tại sẽ không được thêm cột priority, dẫn đến lỗi 'no such column: priority' khi list() thực thi SELECT có cột priority", "tasktrack/cli.py --priority type=int không validate giá trị ngoài khoảng 0–2 (vd: --priority 99 sẽ được chấp nhận và hiển thị nhãn '?')", 'Không có test nào cho logic mới (thêm priority, hiển thị nhãn, ordering theo priority)']
+    questions  = []
+    comments   = [('blocker', 'tasktrack/storage.py'), ('nit', 'tasktrack/cli.py'), ('nit', 'tasktrack/storage.py')]
+--- PR#2 (feat: add user login and cloud sync) — kỳ vọng <58% (escalate)
+    confidence = 0.28  risk_level = high
+    reasoning  = Có nhiều tín hiệu rủi ro cao: MD5, SQL injection, token yếu, hard-coded user_id, và thiếu xác thực thực tế. PR này không nên merge cho đến khi sửa tất cả các vấn đề này.
+    risks      = ['MD5 không an toàn cho băm mật khẩu - cần dùng bcrypt/scrypt', 'Token lưu plaintext, dễ bị đánh cắp', 'Seed token chứa PID và hash mật khẩu - dễ đoán', 'Hard-coded user_id gây sai sót dữ liệu và bảo mật', 'SQL injection trong storage.py - nguy cơ thao tác dữ liệu', 'Không có xác thực thực tế - token chỉ là hash của mật khẩu', 'Hard-coded URL production - không linh hoạt và rủi ro bảo mật']
+    questions  = ['Vì sao dùng MD5 cho mật khẩu ở tasktrack/auth.py:12 thay vì bcrypt? MD5 không an toàn.', 'Vì sao hard-coded user_id=1 ở tasktrack/sync.py:33? Điều này sai sót dữ liệu và bảo mật.', 'Vì sao ghép chuỗi SQL trong tasktrack/storage.py:25? Điều này tạo ra SQL injection.', 'Token được lưu plaintext và seed bao gồm PID và hash mật khẩu ở tasktrack/auth.py:15. Có kế hoạch để sửa những vấn đề này không?']
+    comments   = [('blocker', 'tasktrack/auth.py'), ('blocker', 'tasktrack/auth.py'), ('blocker', 'tasktrack/auth.py'), ('blocker', 'tasktrack/storage.py'), ('blocker', 'tasktrack/sync.py'), ('blocker', 'tasktrack/sync.py'), ('blocker', 'tasktrack/cli.py'), ('blocker', 'tasktrack/sync.py')]
