@@ -1,0 +1,5 @@
+confidence        = 0.93
+risk_level        = low
+ngưỡng auto       = 0.73
+reasoning         = Thay đổi hoàn toàn cơ học: chỉ thêm một trường optional có default value vào dataclass/pydantic model. Không đổi hành vi, không đụng auth/security/crypto, không cần migration ngay tức thì.
+NHÁNH ĐƯỢC CHỌN   = auto_approve

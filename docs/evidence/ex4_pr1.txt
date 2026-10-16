@@ -1,19 +1,19 @@
 ─────────────────────── Exercise 4 — SQLite audit trail ───────────────────────
 PR: https://github.com/VinUni-AI20k/PR-Demo/pull/1
-thread_id = 7d4b1bfa-c308-4fa1-9619-a34095460845
+thread_id = 183f29c9-6692-4ccf-9ae3-f33899d80d76
 
 → fetch_pr
   ✓ 3 files, head 1646156
 → analyze
-  ✓ confidence=62%, 3 comment(s)
+  ✓ confidence=68%, 4 comment(s)
 → route
-  ✓ decision=human_approval (confidence=62%)
-┌───────────────────────────────── conf=62% ──────────────────────────────────┐
-│ PR thêm field `priority` (int, default=0) vào Task model, schema SQLite, và │
-│ CLI. Thay đổi đơn giản, dùng parameterized query, không có tín hiệu rủi ro  │
-│ bảo mật. Tuy nhiên, schema dùng `CREATE TABLE IF NOT EXISTS` nên DB cũ sẽ   │
-│ thiếu column `priority` và gây lỗi runtime; đồng thời không có test nào cho │
-│ logic mới.                                                                  │
+  ✓ decision=human_approval (confidence=68%)
+┌───────────────────────────────── conf=68% ──────────────────────────────────┐
+│ PR thêm trường `priority` (0=normal, 1=high, 2=urgent) vào model Task,      │
+│ schema SQLite, và CLI. Thứ tự hiển thị task giờ sắp xếp theo priority giảm  │
+│ dần rồi đến id. Tuy nhiên, migration sử dụng `CREATE TABLE IF NOT EXISTS`   │
+│ nên sẽ không thêm cột mới vào DB đã tồn tại, dẫn đến lỗi runtime cho        │
+│ existing users.                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 approve/reject/edit? Feedback: Deserializing unregistered type common.schemas.PRAnalysis from checkpoint. This will be blocked in a future version. Set LANGGRAPH_STRICT_MSGPACK=true to block now, or add to allowed_msgpack_modules to allow explicitly: [('common.schemas', 'PRAnalysis')]
 → commit
@@ -22,4 +22,4 @@ approve/reject/edit? Feedback: Deserializing unregistered type common.schemas.PR
 final_action = committed
 
 Replay: uv run python -m audit.replay --thread 
-7d4b1bfa-c308-4fa1-9619-a34095460845
+183f29c9-6692-4ccf-9ae3-f33899d80d76

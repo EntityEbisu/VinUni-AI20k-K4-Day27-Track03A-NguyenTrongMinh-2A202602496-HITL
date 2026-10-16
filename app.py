@@ -10,6 +10,10 @@ Routing thresholds (common/schemas.py):
     > 72%        auto_approve     UI shows a success card; reviewer does nothing
     58 – 72%     human_approval   UI shows Approve / Reject / Edit buttons
     <  58%       escalate         UI shows a question form for the reviewer
+
+Graph: dùng lại đúng `build_graph(checkpointer)` của exercises/exercise_4_audit.py, với
+checkpointer AsyncSqliteSaver (cùng file hitl_audit.db) -> phiên resume được sau khi
+tắt/mở lại Streamlit. Sidebar đọc audit_events qua app_helpers.py.
 """
 
 from __future__ import annotations
@@ -71,7 +75,7 @@ with st.sidebar:
                 }
                 for t in threads
             ],
-            use_container_width=True,
+            width="stretch",  # use_container_width đã bị deprecate
             hide_index=True,
         )
         pick = st.selectbox(
@@ -100,7 +104,7 @@ with st.sidebar:
                 }
                 for e in events
             ],
-            use_container_width=True,
+            width="stretch",  # use_container_width đã bị deprecate
             hide_index=True,
         )
 

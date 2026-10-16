@@ -1,0 +1,6 @@
+audit/replay.py --list (MAX(risk_level) kieu chuoi - SAI thu tu rui ro):
+    747b5b15 -> med
+    183f29c9 -> med
+app_helpers.fetch_recent_threads (CASE theo hang - DUNG):
+    747b5b15 -> high
+    183f29c9 -> med

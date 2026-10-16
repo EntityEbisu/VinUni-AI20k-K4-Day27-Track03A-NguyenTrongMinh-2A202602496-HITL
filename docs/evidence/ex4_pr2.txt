@@ -1,30 +1,29 @@
 ─────────────────────── Exercise 4 — SQLite audit trail ───────────────────────
 PR: https://github.com/VinUni-AI20k/PR-Demo/pull/2
-thread_id = 315eceb7-671b-4daf-92d0-80492f211559
+thread_id = 747b5b15-a6f5-478e-bf34-bbecc45d217b
 
 → fetch_pr
   ✓ 4 files, head 501f95e
 → analyze
-  ✓ confidence=28%, 9 comment(s)
+  ✓ confidence=22%, 8 comment(s)
 → route
-  ✓ decision=escalate (confidence=28%)
-Q: Vì sao dùng MD5 cho mật khẩu ở auth.py:9 thay vì bcrypt/argon2? MD5 không an
-toàn cho mật khẩu.
-A: Q: Tại sao lại ghép SQL bằng f-string ở storage.py:26 thay vùi dùng 
-parameterized queries như cũ? Đây là lỗ hổng SQL injection.
-A: Q: Hard-coded user_id = 1 ở sync.py:34 có phải là tạm thời không? Nếu có, sẽ 
-sửa trong PR nào và khi nào?
-A: Q: Tại sao SYNC_URL ở sync.py:9 lại dùng http:// thay vì https://? Dữ liệu 
-người dùng cần được mã hóa trong quá trình truyền.
-A: Q: Token lưu plaintext trong ~/.tasktrack_token ở auth.py:19 có kế hoạch mã 
-hóa/quản lý quyền truy cập không?
+  ✓ decision=escalate (confidence=22%)
+Q: Vì sao dùng MD5 không salt ở auth.py:13 thay vì bcrypt/argon2? MD5 bị phá 
+vứt hoàn toàn và không salt khiến rainbow table hoạt động ngay lập tức.
+A: Q: storage.py:24 ghép title vào SQL qua f-string từ user input — đây là SQL 
+injection trực tiếp. Tại sao không giữ parameterized query như cũ?
+A: Q: sync.py:8 hard-code endpoint production 
+`http://sync.tasktrack.example.com/v1/push` dùng HTTP không mã hoá. Tại sao 
+không cấu hình qua env var và bắt buộc HTTPS?
+A: Q: sync.py:36 hard-code _current_user_id() luôn trả về 1 — điều này phá vỡ hoàn
+toàn tính đa người dùng của feature cloud sync. Khi nào có session thực sự?
 A: Deserializing unregistered type common.schemas.PRAnalysis from checkpoint. This will be blocked in a future version. Set LANGGRAPH_STRICT_MSGPACK=true to block now, or add to allowed_msgpack_modules to allow explicitly: [('common.schemas', 'PRAnalysis')]
 → synthesize
-  ✓ refined confidence=20%
+  ✓ refined confidence=35%
 → commit
   ✓ posted comment to https://github.com/VinUni-AI20k/PR-Demo/pull/2
 ──────────────────────────────────── Final ────────────────────────────────────
 final_action = committed
 
 Replay: uv run python -m audit.replay --thread 
-315eceb7-671b-4daf-92d0-80492f211559
+747b5b15-a6f5-478e-bf34-bbecc45d217b

@@ -1,18 +1,18 @@
-───────────────── Replay 7d4b1bfa-c308-4fa1-9619-a34095460845 ─────────────────
-2026-10-16T03:04:48.500090+00:00  fetch_pr           conf=0.00 risk=med  
-decision=pending    reviewer=-               2108ms  Fetched 3 files, 
+───────────────── Replay 183f29c9-6692-4ccf-9ae3-f33899d80d76 ─────────────────
+2026-10-16T03:10:41.904180+00:00  fetch_pr           conf=0.00 risk=med  
+decision=pending    reviewer=-               1735ms  Fetched 3 files, 
 head=1646156
-2026-10-16T03:05:29.184897+00:00  analyze            conf=0.62 risk=med  
-decision=pending    reviewer=-              40641ms  PR có đổi schema (thêm 
-column `priority`) nhưng không xử lý 
-2026-10-16T03:05:29.201610+00:00  route              conf=0.62 risk=med  
+2026-10-16T03:11:30.027617+00:00  analyze            conf=0.68 risk=med  
+decision=pending    reviewer=-              48078ms  Không có tín hiệu rủi ro 
+cao ở BƯỚC 1 (không auth/encryption
+2026-10-16T03:11:30.042449+00:00  route              conf=0.68 risk=med  
 decision=pending    reviewer=-                  0ms  Định tuyến vào nhánh 
-human_approval với confidence=62%
-2026-10-16T03:05:29.222610+00:00  human_approval     conf=0.62 risk=med  
+human_approval với confidence=68%
+2026-10-16T03:11:30.064505+00:00  human_approval     conf=0.68 risk=med  
 decision=pending    reviewer=-                  0ms  Yêu cầu duyệt: PR thêm 
-field `priority` (int, default=0) vào
-2026-10-16T03:05:29.258689+00:00  human_approval     conf=0.62 risk=med  
+trường `priority` (0=normal, 1=high, 
+2026-10-16T03:11:30.103265+00:00  human_approval     conf=0.68 risk=med  
 decision=approve    reviewer=EntityEbisu        0ms  approve sau 0 ms — góp ý: 
 Đồng ý đăng review này.
-2026-10-16T03:05:30.332207+00:00  commit             conf=0.62 risk=med  
-decision=approve    reviewer=EntityEbisu     1078ms  final_action=committed
+2026-10-16T03:11:31.162314+00:00  commit             conf=0.68 risk=med  
+decision=approve    reviewer=EntityEbisu     1061ms  final_action=committed

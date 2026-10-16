@@ -1,0 +1,106 @@
+2026-10-16 10:14:50.572 Uvicorn server started on :::8501
+
+  You can now view your Streamlit app in your browser.
+
+  Local URL: http://localhost:8501
+  Network URL: http://172.16.8.130:8501
+  External URL: http://14.0.22.183:8501
+
+2026-10-16 10:15:16.662 Please replace `use_container_width` with `width`.
+
+`use_container_width` will be removed after 2025-12-31.
+
+For `use_container_width=True`, use `width='stretch'`. For `use_container_width=False`, use `width='content'`.
+2026-10-16 10:16:08.152 Please replace `use_container_width` with `width`.
+
+`use_container_width` will be removed after 2025-12-31.
+
+For `use_container_width=True`, use `width='stretch'`. For `use_container_width=False`, use `width='content'`.
+→ fetch_pr
+  ✓ 3 files, head 1646156
+→ analyze
+  ✓ confidence=66%, 4 comment(s)
+→ route
+  ✓ decision=human_approval (confidence=66%)
+2026-10-16 10:17:14.639 Please replace `use_container_width` with `width`.
+
+`use_container_width` will be removed after 2025-12-31.
+
+For `use_container_width=True`, use `width='stretch'`. For `use_container_width=False`, use `width='content'`.
+Deserializing unregistered type common.schemas.PRAnalysis from checkpoint. This will be blocked in a future version. Set LANGGRAPH_STRICT_MSGPACK=true to block now, or add to allowed_msgpack_modules to allow explicitly: [('common.schemas', 'PRAnalysis')]
+→ commit
+  ✓ posted comment to https://github.com/VinUni-AI20k/PR-Demo/pull/1
+2026-10-16 10:17:15.868 Please replace `use_container_width` with `width`.
+
+`use_container_width` will be removed after 2025-12-31.
+
+For `use_container_width=True`, use `width='stretch'`. For `use_container_width=False`, use `width='content'`.
+2026-10-16 10:17:43.229 Please replace `use_container_width` with `width`.
+
+`use_container_width` will be removed after 2025-12-31.
+
+For `use_container_width=True`, use `width='stretch'`. For `use_container_width=False`, use `width='content'`.
+→ fetch_pr
+  ✓ 4 files, head 501f95e
+→ analyze
+  ✓ confidence=25%, 7 comment(s)
+→ route
+  ✓ decision=escalate (confidence=25%)
+2026-10-16 10:18:52.900 Please replace `use_container_width` with `width`.
+
+`use_container_width` will be removed after 2025-12-31.
+
+For `use_container_width=True`, use `width='stretch'`. For `use_container_width=False`, use `width='content'`.
+2026-10-16 10:21:34.012 Please replace `use_container_width` with `width`.
+
+`use_container_width` will be removed after 2025-12-31.
+
+For `use_container_width=True`, use `width='stretch'`. For `use_container_width=False`, use `width='content'`.
+2026-10-16 10:21:42.625 Please replace `use_container_width` with `width`.
+
+`use_container_width` will be removed after 2025-12-31.
+
+For `use_container_width=True`, use `width='stretch'`. For `use_container_width=False`, use `width='content'`.
+→ fetch_pr
+  ✓ 4 files, head 501f95e
+→ analyze
+  ✓ confidence=22%, 8 comment(s)
+→ route
+  ✓ decision=escalate (confidence=22%)
+2026-10-16 10:22:59.730 Please replace `use_container_width` with `width`.
+
+`use_container_width` will be removed after 2025-12-31.
+
+For `use_container_width=True`, use `width='stretch'`. For `use_container_width=False`, use `width='content'`.
+→ synthesize
+  ✓ refined confidence=35%
+→ commit
+  ✓ posted comment to https://github.com/VinUni-AI20k/PR-Demo/pull/2
+2026-10-16 10:23:56.443 Please replace `use_container_width` with `width`.
+
+`use_container_width` will be removed after 2025-12-31.
+
+For `use_container_width=True`, use `width='stretch'`. For `use_container_width=False`, use `width='content'`.
+2026-10-16 10:24:29.202 Please replace `use_container_width` with `width`.
+
+`use_container_width` will be removed after 2025-12-31.
+
+For `use_container_width=True`, use `width='stretch'`. For `use_container_width=False`, use `width='content'`.
+→ fetch_pr
+  ✓ 3 files, head 1646156
+→ analyze
+  ✓ confidence=68%, 4 comment(s)
+→ route
+  ✓ decision=human_approval (confidence=68%)
+2026-10-16 10:25:15.363 Please replace `use_container_width` with `width`.
+
+`use_container_width` will be removed after 2025-12-31.
+
+For `use_container_width=True`, use `width='stretch'`. For `use_container_width=False`, use `width='content'`.
+→ commit
+  · skipping comment (choice=reject)
+2026-10-16 10:25:15.529 Please replace `use_container_width` with `width`.
+
+`use_container_width` will be removed after 2025-12-31.
+
+For `use_container_width=True`, use `width='stretch'`. For `use_container_width=False`, use `width='content'`.
