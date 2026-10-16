@@ -1,0 +1,7 @@
+LLM_MODEL    = longcat-2.5-preview-free
+LLM_BASE_URL = https://opencode.ai/zen/go/v1
+headers      = {'Accept': 'application/json', 'Content-Type': 'application/json', 'User-Agent': 'Day27-HITL-Lab/0.1', 'X-Stainless-Lang': 'python', 'X-Stainless-Package-Version': '2.36.0', 'X-Stainless-OS': 'Windows', 'X-Stainless-Arch': 'other:amd64', 'X-Stainless-Runtime': 'CPython', 'X-Stainless-Runtime-Version': '3.12.14', 'x-opencode-session': 'day27-minh-001', 'X-Stainless-Async': 'async:false', 'OpenAI-Organization': '<openai.Omit object at 0x0000024BF4247EC0>', 'OpenAI-Project': '<openai.Omit object at 0x0000024BF58FE8A0>'}
+session header present: True
+sync  invoke : 6.5s -> 'OK'
+async ainvoke: 4.2s -> 'OK'
+PROBE OK

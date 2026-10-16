@@ -1,0 +1,2 @@
+OK   method=json_schema -> PRAnalysis confidence=1.00 comments=1
+RESULT: dùng method='json_schema'
