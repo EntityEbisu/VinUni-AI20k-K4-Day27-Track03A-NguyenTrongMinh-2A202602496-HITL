@@ -1,0 +1,112 @@
+───────────────────── Exercise 2 — HITL with interrupt() ──────────────────────
+PR: https://github.com/VinUni-AI20k/PR-Demo/pull/1
+
+thread_id = 51452f5f-1d66-4acb-a437-58a504adc21e
+
+→ fetch_pr
+  ✓ 3 files, head 1646156
+→ analyze
+  ✓ confidence=65%, 4 comment(s)
+→ route
+  ✓ decision=human_approval (confidence=65%)
+⏸  chờ người duyệt (interrupt)
+┌───────────────────────────── Approval request ──────────────────────────────┐
+│ Confidence: 65%                                                             │
+│ PR có đổi schema (thêm cột priority) và đổi API công khai (method add()     │
+│ signature), logic mới nhỏ nhưng chưa có test. Không có tín hiệu rủi ro cao  │
+│ ở BƯỚC 1 (không liên quan auth, encryption, SQL injection). Theo BƯỚC 2,    │
+│ đây là thay đổi vừa nên confidence trong khoảng 0.60-0.72.                  │
+│                                                                             │
+│ Summary: Thêm trường priority vào Task model, cập nhật schema database, và  │
+│ hiển thị priority trong CLI. Thay đổi bao gồm: thêm cột priority vào bảng   │
+│ tasks, cập nhật method add() và list() trong Storage, thêm argument         │
+│ --priority cho CLI, và hiển thị nhãn priority khi list tasks.               │
+└─────────────────────────────────────────────────────────────────────────────┘
+   tasktrack/storage.py:12 — Thêm cột priority với DEFAULT 0 giúp backward 
+compatibility tốt. Tuy nhiên, nên thêm validation để đảm bảo priority chỉ nhận 
+các giá trị hợp lệ (0, 1, 2) thay vì chấp nhận mọi số nguyên.
+   tasktrack/storage.py:35 — ORDER BY priority DESC, id là lựa chọn hợp lý để 
+hiển thị task ưu tiên cao trước. Cân nhắc thêm index nếu số lượng task lớn để 
+tối ưu performance.
+   tasktrack/cli.py:6 — PRIORITY_LABEL dùng dict với key 0,1,2. Nếu priority 
+ngoài range này (ví dụ: 99), sẽ hiển thị '?'. Nên thêm validation ở CLI hoặc 
+Storage để ngăn chặn giá trị không hợp lệ.
+   tasktrack/storage.py:25 — Method add() nhận parameter priority nhưng không 
+validate. Nên thêm kiểm tra để đảm bảo priority là giá trị hợp lệ trước khi 
+insert vào database.
+
+--- diff preview ---
+diff --git a/tasktrack/cli.py b/tasktrack/cli.py
+index 8649551..af7db5e 100644
+--- a/tasktrack/cli.py
++++ b/tasktrack/cli.py
+@@ -3,12 +3,16 @@
+ from .storage import Storage
+ 
+ 
++PRIORITY_LABEL = {0: " ", 1: "!", 2: "!!"}
++
++
+ def main() -> None:
+     parser = argparse.ArgumentParser(prog="tasktrack")
+     sub = parser.add_subparsers(dest="cmd", required=True)
+ 
+     p_add = sub.add_parser("add", help="Add a task")
+     p_add.add_argument("title")
++    p_add.add_argument("--priority", type=int, default=0, help="0=normal, 
+1=high, 2=urgent")
+ 
+     sub.add_parser("list", help="List all tasks")
+ 
+@@ -19,12 +23,13 @@ def main() -> None:
+     store = Storage()
+ 
+     if args.cmd == "add":
+-        t = store.add(args.title)
++        t = store.add(args.title, priority=args.priority)
+         print(f"[{t.id}] {t.title}")
+     elif args.cmd == "list":
+         for t in store.list():
+             mark = "x" if t.done else " "
+-            print(f"[{mark}] {t.id:>3}  {t.title}")
++            pr = PRIORITY_LABEL.get(t.priority, "?")
++            print(f"[{mark}] {pr:>2} {t.id:>3}  {t.title}")
+     elif args.cmd == "done":
+         store.mark_done(args.task_id)
+         print(f"Marked task {args.task_id} done")
+diff --git a/tasktrack/models.py b/tasktrack/models.py
+index 9fb4701..cce0f4e 100644
+--- a/tasktrack/models.py
++++ b/tasktrack/models.py
+@@ -6,3 +6,4 @@ class Task:
+     id: int | None
+     title: str
+     done: bool = False
++    priority: int = 0   # 0 = normal, 1 = high, 2 = urgent
+diff --git a/tasktrack/storage.py b/tasktrack/storage.py
+index a1f4f6c..e615a08 100644
+--- a/tasktrack/storage.py
++++ b/tasktrack/storage.py
+@@ -9,9 +9,10 @@
+ 
+ SCHEMA = """
+ CREATE TABLE IF NOT EXISTS tasks (
+-    id    INTEGER PRIMARY KEY AUTOINCREMENT,
+-    title TEXT    NOT NULL,
+-    done  INTEGER NOT NULL DEFAULT 0
++    id       INTEGER PRIMARY KEY AUTOINCREMENT,
++    title    TEXT    NOT NULL,
++    done     INTEGER NOT NULL DEFAULT 0,
++    priority INTEGER NOT NULL DEFAULT 0
+ )
+ """
+ 
+@
+
+Choice (approve/reject/edit)? resume với {'choice': 'approve', 'feedback': ''}
+Deserializing unregistered type common.schemas.PRAnalysis from checkpoint. This will be blocked in a future version. Set LANGGRAPH_STRICT_MSGPACK=true to block now, or add to allowed_msgpack_modules to allow explicitly: [('common.schemas', 'PRAnalysis')]
+⏸  chờ người duyệt (interrupt)
+→ commit
+  ✓ posted comment to https://github.com/VinUni-AI20k/PR-Demo/pull/1
+──────────────────────────────────── Done ─────────────────────────────────────
+committed
