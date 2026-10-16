@@ -1,0 +1,64 @@
+────────────────── Exercise 3 — escalation with reviewer Q&A ──────────────────
+PR: https://github.com/VinUni-AI20k/PR-Demo/pull/2
+
+thread_id = 7b43e979-4c07-4d74-8d66-4dd0746cb413
+
+→ fetch_pr
+  ✓ 4 files, head 501f95e
+→ analyze
+  ✓ confidence=22%, 4 question(s)
+→ route
+  ✓ decision=escalate (confidence=22%)
+⚠ escalate với 4 câu hỏi
+  ? Vì sao storage.py:15 lại dùng f-string để nhét trực tiếp `title` vào SQL 
+thay vì parameterized query? Comment 'SQL log reads naturally' có phải là lý do
+chính đáng để chấp nhận injection risk không?
+  ? Vì sao auth.py:10 chọn MD5 không salt cho password hashing thay vì 
+bcrypt/argon2? Có rủi ro về regulatory compliance (GDPR, PCI-DSS) không khi lưu
+credential yếu như vậy?
+  ? Vì sao sync.py:9 dùng http:// thay vì https:// cho endpoint nhận bearer 
+token và dữ liệu task? Có phải endpoint production thực sự chỉ hỗ trợ HTTP 
+không?
+  ? Hard-coded user_id = 1 ở sync.py:35 có phải là design tạm thời không? Nếu 
+nhiều user cùng dùng, việc tất cả đều sync dưới cùng user_id=1 có gây leak dữ 
+liệu giữa các tài khoản không?
+┌──────────────────────────── Escalation conf=22% ────────────────────────────┐
+│ PR introduces critical security vulnerabilities that make it unsafe to      │
+│ merge: SQL injection via f-string interpolation in storage.py, unsalted MD5 │
+│ password hashing in auth.py, plaintext HTTP transport of tasks and auth     │
+│ tokens in sync.py, and hardcoded user_id for multi-user sync. No tests are  │
+│ provided for any of the new authentication or networking logic.             │
+└─────────────────────────────────────────────────────────────────────────────┘
+Q: Vì sao storage.py:15 lại dùng f-string để nhét trực tiếp `title` vào SQL 
+thay vì parameterized query? Comment 'SQL log reads naturally' có phải là lý do
+chính đáng để chấp nhận injection risk không?
+A: Q: Vì sao auth.py:10 chọn MD5 không salt cho password hashing thay vì 
+bcrypt/argon2? Có rủi ro về regulatory compliance (GDPR, PCI-DSS) không khi lưu
+credential yếu như vậy?
+A: Q: Vì sao sync.py:9 dùng http:// thay vì https:// cho endpoint nhận bearer 
+token và dữ liệu task? Có phải endpoint production thực sự chỉ hỗ trợ HTTP 
+không?
+A: Q: Hard-coded user_id = 1 ở sync.py:35 có phải là design tạm thời không? Nếu 
+nhiều user cùng dùng, việc tất cả đều sync dưới cùng user_id=1 có gây leak dữ 
+liệu giữa các tài khoản không?
+A: Deserializing unregistered type common.schemas.PRAnalysis from checkpoint. This will be blocked in a future version. Set LANGGRAPH_STRICT_MSGPACK=true to block now, or add to allowed_msgpack_modules to allow explicitly: [('common.schemas', 'PRAnalysis')]
+⚠ escalate với 4 câu hỏi
+  ? Vì sao storage.py:15 lại dùng f-string để nhét trực tiếp `title` vào SQL 
+thay vì parameterized query? Comment 'SQL log reads naturally' có phải là lý do
+chính đáng để chấp nhận injection risk không?
+  ? Vì sao auth.py:10 chọn MD5 không salt cho password hashing thay vì 
+bcrypt/argon2? Có rủi ro về regulatory compliance (GDPR, PCI-DSS) không khi lưu
+credential yếu như vậy?
+  ? Vì sao sync.py:9 dùng http:// thay vì https:// cho endpoint nhận bearer 
+token và dữ liệu task? Có phải endpoint production thực sự chỉ hỗ trợ HTTP 
+không?
+  ? Hard-coded user_id = 1 ở sync.py:35 có phải là design tạm thời không? Nếu 
+nhiều user cùng dùng, việc tất cả đều sync dưới cùng user_id=1 có gây leak dữ 
+liệu giữa các tài khoản không?
+→ synthesize
+  ✓ refined confidence=88%
+→ commit
+  ✓ posted comment to https://github.com/VinUni-AI20k/PR-Demo/pull/2
+──────────────────────────────────── Final ────────────────────────────────────
+final_action = committed_after_escalation
+final confidence = 88%

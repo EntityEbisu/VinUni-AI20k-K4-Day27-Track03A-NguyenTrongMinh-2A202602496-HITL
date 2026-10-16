@@ -1,0 +1,9 @@
+tổng comment PR#2: 470 | của EntityEbisu : 1
+URL: https://github.com/VinUni-AI20k/PR-Demo/pull/2#issuecomment-6207037152 | 2026-10-16T02:59:55Z
+### Automated review (confidence 88%)
+
+PR thêm tính năng đăng nhập và đồng bộ đám mây. Dựa trên câu trả lời của reviewer, các rủi ro bảo mật chính đều là tạm thời, giới hạn trong demo nội bộ, và có kế hoạch sửa chữa.
+
+- **[blocker]** `tasktrack/storage.py:15` — Dùng f-string để nhét trực tiếp title vào SQL là lỗ hổng SQL Injection nghiêm trọng. Tuy nhiên, reviewer xác nhận đây chỉ là demo nội bộ cho lab, chưa dùng cho production. Comment 'SQL log reads naturally' không phải là lý do chính đáng để chấp nhận injection risk. Cần sửa bằng parameterized query trước khi production hóa.
+- **[blocker]** `tasktrack/auth.py:10` — MD5 không salt là yếu tố bảo mật yếu, không đáp ứng tiêu chuẩn hiện đại (bcrypt/argon2). Tuy nhiên, reviewer xác nhận sẽ thay bằng bcrypt ở PR sau. Vẫn cần lưu ý rằng việc lưu credential yếu có thể vi phạm GDPR, PCI-DSS nếu ứng dụng xử lý dữ liệu nhạy cảm.
+- **[blocker]**

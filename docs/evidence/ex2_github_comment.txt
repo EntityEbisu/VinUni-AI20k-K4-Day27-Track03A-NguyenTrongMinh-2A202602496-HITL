@@ -1,2 +1,12 @@
-andydyan20 | 2026-05-15T03:32:14Z | ### Automated review (confidence 85%) /  / This pull request introduces a new priority field to tasks in the task 
-hanhieu | 2026-05-15T03:33:05Z | ### Automated review (confidence 85%) /  / This pull request introduces a new 'priority' field to tasks in the tas
+Comment do agent đăng lên PR #1, xác minh qua GitHub REST API (KHÔNG chỉ tin log console):
+
+  PR      : https://github.com/VinUni-AI20k/PR-Demo/pull/1
+  comment : https://github.com/VinUni-AI20k/PR-Demo/pull/1#issuecomment-6206990667
+  tác giả : EntityEbisu
+  lúc     : 2026-10-16T02:55:37Z
+  nội dung: "### Automated review (confidence 65%) / Thêm trường priority vào Task model, ..."
+
+Ghi chú: PR #1 đã có 719 comment tích luỹ từ các bạn khác trong lớp, nên phải duyệt hết
+các trang của /issues/1/comments (per_page=100, page=1..N) rồi lọc theo login mới thấy
+comment của chính mình — hai lần kiểm tra đầu (chỉ lấy trang 1, hoặc 5 phần tử cuối)
+đã báo sai là "0 comment của EntityEbisu".
