@@ -22,12 +22,10 @@ from dotenv import load_dotenv
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from langgraph.types import Command
 
+import app_helpers
 from common.db import db_path
-# TODO: import the graph builder + helpers from your exercise 4 solution.
-# Suggestion: rename `exercises/exercise_4_audit.py` functions you need
-# (build_graph, handle_interrupt logic) and import them here, OR copy the
-# graph wiring inline.
-# from exercises.exercise_4_audit import build_graph
+# Dùng lại đúng graph của bài 4 (build_graph nhận checkpointer) — không copy wiring.
+from exercises.exercise_4_audit import build_graph
 
 
 load_dotenv()
@@ -42,6 +40,8 @@ if "interrupt_payload" not in st.session_state:
     st.session_state.interrupt_payload = None
 if "final" not in st.session_state:
     st.session_state.final = None
+if "selected_thread" not in st.session_state:
+    st.session_state.selected_thread = None
 
 
 # ─── Page setup ────────────────────────────────────────────────────────────
@@ -52,10 +52,57 @@ st.title("HITL PR Review Agent")
 # ─── Sidebar — recent sessions ─────────────────────────────────────────────
 with st.sidebar:
     st.header("Recent sessions")
-    # TODO: call `audit.replay.list_threads`-style query against audit_events
-    # and render thread_id + pr_url + worst_risk + last_event as a small table.
-    # On row click, set st.session_state.thread_id and rerun.
-    st.caption("(TODO — populate from audit_events)")
+    # Dữ liệu lấy từ bảng audit_events qua app_helpers (KHÔNG sửa audit/replay.py).
+    try:
+        threads = asyncio.run(app_helpers.fetch_recent_threads())
+    except Exception as exc:  # chưa có DB / chưa có bảng -> coi như chưa có phiên nào
+        threads = []
+        st.caption(f"(chưa đọc được audit_events: {exc})")
+
+    if threads:
+        st.dataframe(
+            [
+                {
+                    "thread": t["thread_id"][:8],
+                    "pr": t["pr_url"].rsplit("/", 1)[-1],
+                    "risk": t["worst_risk"],
+                    "events": t["events"],
+                    "last": str(t["last_event"])[:19],
+                }
+                for t in threads
+            ],
+            use_container_width=True,
+            hide_index=True,
+        )
+        pick = st.selectbox(
+            "Xem chi tiết phiên",
+            options=[t["thread_id"] for t in threads],
+            index=None,
+            placeholder="chọn thread_id",
+        )
+        if pick:
+            st.session_state.selected_thread = pick
+    else:
+        st.caption("(chưa có phiên nào trong audit_events)")
+
+    if st.session_state.selected_thread:
+        st.subheader("Sự kiện của phiên")
+        events = asyncio.run(app_helpers.fetch_thread_events(st.session_state.selected_thread))
+        st.dataframe(
+            [
+                {
+                    "action": e["action"],
+                    "conf": round(e["confidence"], 2),
+                    "risk": e["risk_level"],
+                    "decision": e["decision"],
+                    "reviewer": e["reviewer_id"] or "-",
+                    "ms": e["execution_time_ms"],
+                }
+                for e in events
+            ],
+            use_container_width=True,
+            hide_index=True,
+        )
 
 
 # ─── Top form — start a new review ─────────────────────────────────────────
@@ -83,17 +130,16 @@ def render_approval_card(payload: dict) -> dict | None:
 
     feedback = st.text_input("Feedback (optional)", key="approval_feedback")
     col1, col2, col3 = st.columns(3)
-    # TODO: hook up the three buttons. Each click should return one of:
-    #   {"choice": "approve", "feedback": feedback}
-    #   {"choice": "reject",  "feedback": feedback}
-    #   {"choice": "edit",    "feedback": feedback}
+    choice = None
     if col1.button("Approve", type="primary"):
-        ...  # return {"choice": "approve", ...}
+        choice = "approve"
     if col2.button("Reject"):
-        ...
+        choice = "reject"
     if col3.button("Edit"):
-        ...
-    return None
+        choice = "edit"
+    if choice is None:
+        return None
+    return {"choice": choice, "feedback": feedback}
 
 
 def render_escalation_card(payload: dict) -> dict | None:
@@ -106,12 +152,17 @@ def render_escalation_card(payload: dict) -> dict | None:
     st.markdown(payload["summary"])
 
     with st.form("escalation"):
-        # TODO: render one text_input per question in payload["questions"]
-        #       collect answers into a dict {question: answer_str}
-        #       on submit, return the dict.
         answers: dict[str, str] = {}
-        st.form_submit_button("Submit answers")
-    return None
+        for i, q in enumerate(payload["questions"]):
+            answers[q] = st.text_input(q, key=f"escalation_answer_{i}")
+        submitted_answers = st.form_submit_button("Submit answers")
+
+    if not submitted_answers:
+        return None
+    if not any(v.strip() for v in answers.values()):
+        st.warning("Cần trả lời ít nhất một câu hỏi trước khi gửi.")
+        return None
+    return {q: v for q, v in answers.items() if v.strip()}
 
 
 # ─── Drive the graph ───────────────────────────────────────────────────────
@@ -119,18 +170,13 @@ async def run_graph(pr_url: str, thread_id: str, resume_value=None):
     """Invoke the graph once. Returns the final result or {'__interrupt__': ...}."""
     async with AsyncSqliteSaver.from_conn_string(db_path()) as cp:
         await cp.setup()
-        # TODO: build the graph with `cp` as the checkpointer (use the function
-        # you imported/copied at the top of this file).
-        # app = build_graph(cp)
+        # build_graph của bài 4 nhận checkpointer -> dùng chính checkpointer SQLite này,
+        # nên phiên có thể resume được kể cả sau khi tắt Streamlit.
+        graph = build_graph(cp)
         cfg = {"configurable": {"thread_id": thread_id}}
-
-        # TODO:
-        # - If resume_value is None: result = await app.ainvoke(
-        #       {"pr_url": pr_url, "thread_id": thread_id}, cfg)
-        # - Else:                    result = await app.ainvoke(
-        #       Command(resume=resume_value), cfg)
-        # - Return result.
-        raise NotImplementedError("Wire up the graph invocation")
+        if resume_value is None:
+            return await graph.ainvoke({"pr_url": pr_url, "thread_id": thread_id}, cfg)
+        return await graph.ainvoke(Command(resume=resume_value), cfg)
 
 
 # ─── Main flow ─────────────────────────────────────────────────────────────

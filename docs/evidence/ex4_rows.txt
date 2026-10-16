@@ -1,0 +1,16 @@
+thread    action          confidence  risk_level  decision  reviewer     ms   
+--------  --------------  ----------  ----------  --------  -----------  -----
+7d4b1bfa  fetch_pr        0.0         med         pending   -            2108 
+7d4b1bfa  analyze         0.62        med         pending   -            40641
+7d4b1bfa  route           0.62        med         pending   -            0    
+7d4b1bfa  human_approval  0.62        med         pending   -            0    
+7d4b1bfa  human_approval  0.62        med         approve   EntityEbisu  0    
+7d4b1bfa  commit          0.62        med         approve   EntityEbisu  1078 
+315eceb7  fetch_pr        0.0         med         pending   -            1843 
+315eceb7  analyze         0.28        high        pending   -            63500
+315eceb7  route           0.28        high        escalate  -            0    
+315eceb7  escalate        0.28        high        escalate  -            0    
+315eceb7  escalate        0.28        high        escalate  -            0    
+315eceb7  escalate        0.28        high        escalate  EntityEbisu  0    
+315eceb7  synthesize      0.2         high        pending   EntityEbisu  97750
+315eceb7  commit          0.2         high        approve   EntityEbisu  1061 

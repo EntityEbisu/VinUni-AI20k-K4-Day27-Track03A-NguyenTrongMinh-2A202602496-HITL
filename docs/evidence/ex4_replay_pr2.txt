@@ -1,0 +1,24 @@
+───────────────── Replay 315eceb7-671b-4daf-92d0-80492f211559 ─────────────────
+2026-10-16T03:05:46.277464+00:00  fetch_pr           conf=0.00 risk=med  
+decision=pending    reviewer=-               1843ms  Fetched 4 files, 
+head=501f95e
+2026-10-16T03:06:49.801694+00:00  analyze            conf=0.28 risk=high 
+decision=pending    reviewer=-              63500ms  Có ít nhất 6 tín hiệu rủi 
+ro cao cụ thể: MD5, SQL injection,
+2026-10-16T03:06:49.818213+00:00  route              conf=0.28 risk=high 
+decision=escalate   reviewer=-                  0ms  Định tuyến vào nhánh 
+escalate với confidence=28%
+2026-10-16T03:06:49.830210+00:00  escalate           conf=0.28 risk=high 
+decision=escalate   reviewer=-                  0ms  Câu hỏi gửi người duyệt: 
+Vì sao dùng MD5 cho mật khẩu ở auth
+2026-10-16T03:06:49.850212+00:00  escalate           conf=0.28 risk=high 
+decision=escalate   reviewer=-                  0ms  Câu hỏi gửi người duyệt: 
+Vì sao dùng MD5 cho mật khẩu ở auth
+2026-10-16T03:06:49.877375+00:00  escalate           conf=0.28 risk=high 
+decision=escalate   reviewer=EntityEbisu        0ms  Người duyệt trả lời 5 câu 
+hỏi sau 0 ms
+2026-10-16T03:08:27.640883+00:00  synthesize         conf=0.20 risk=high 
+decision=pending    reviewer=EntityEbisu    97750ms  Codebase chứa lỗ hổng SQL 
+injection nghiêm trọng, kèm theo c
+2026-10-16T03:08:28.707648+00:00  commit             conf=0.20 risk=high 
+decision=approve    reviewer=EntityEbisu     1061ms  final_action=committed

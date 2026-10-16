@@ -38,7 +38,7 @@ from langgraph.types import Command, interrupt
 from rich.console import Console
 from rich.panel import Panel
 
-from common.db import db_path, write_audit_event
+from common.db import db_path, replay_events, write_audit_event
 from common.github import fetch_pr, post_review_comment
 from common.llm import get_llm
 from common.schemas import (
@@ -49,6 +49,7 @@ from common.schemas import (
     ReviewState,
     risk_level_for,
 )
+from common_prompts import ANALYZE_SYSTEM_PROMPT, STRUCTURED_METHOD, SYNTHESIZE_SYSTEM_PROMPT
 
 
 console = Console()
@@ -58,12 +59,17 @@ AGENT_ID = "pr-review-agent@v0.1"
 async def audit(state, entry: AuditEntry) -> None:
     """Write one structured AuditEntry row to the `audit_events` table.
 
-    `thread_id` and `pr_url` are taken from `state` so callers only build
-    the entry itself.
+    `thread_id`/`pr_url` lấy từ `state` nên nơi gọi chỉ cần dựng entry.
+
+    Chống trùng: khi graph RESUME, LangGraph chạy lại node chứa `interrupt()` từ đầu,
+    nên dòng "trước interrupt" (decision='pending') sẽ bị ghi lần thứ hai. Ta bỏ qua
+    nếu dòng gần nhất của cùng thread đã có đúng `action` + `decision='pending'`.
     """
-    # TODO: call write_audit_event(thread_id=state["thread_id"],
-    #                              pr_url=state["pr_url"], entry=entry)
-    raise NotImplementedError("Implement the audit() body — one call to write_audit_event")
+    if entry.decision == "pending":
+        recent = await replay_events(state["thread_id"])
+        if recent and recent[-1]["action"] == entry.action and recent[-1]["decision"] == "pending":
+            return
+    await write_audit_event(thread_id=state["thread_id"], pr_url=state["pr_url"], entry=entry)
 
 
 # ─── Reference example — read this carefully ───────────────────────────────
@@ -100,14 +106,23 @@ async def node_fetch_pr(state):
 async def node_analyze(state):
     console.print("[cyan]→ analyze[/cyan]")
     t0 = time.monotonic()
-    llm = get_llm().with_structured_output(PRAnalysis)
-    with console.status("[dim]LLM reviewing the diff...[/dim]"):
+    llm = get_llm().with_structured_output(PRAnalysis, method=STRUCTURED_METHOD)
+    with console.status("[dim]LLM đang đọc diff...[/dim]"):
         a: PRAnalysis = await llm.ainvoke([
-            {"role": "system", "content": "Senior reviewer. Structured output."},
-            {"role": "user", "content": f"Title: {state['pr_title']}\nDiff:\n{state['pr_diff']}"},
+            {"role": "system", "content": ANALYZE_SYSTEM_PROMPT},
+            {"role": "user", "content": f"Tiêu đề PR: {state['pr_title']}\n\nDiff:\n{state['pr_diff']}"},
         ])
     console.print(f"  [green]✓[/green] confidence={a.confidence:.0%}, {len(a.comments)} comment(s)")
-    # TODO: build and emit an AuditEntry for this step. Use the LLM's output `a`.
+    await audit(state, AuditEntry(
+        agent_id=AGENT_ID,
+        action="analyze",
+        confidence=a.confidence,
+        risk_level=risk_level_for(a.confidence),
+        reviewer_id=None,
+        decision="pending",
+        reason=a.confidence_reasoning,
+        execution_time_ms=int((time.monotonic() - t0) * 1000),
+    ))
     return {"analysis": a}
 
 
@@ -122,7 +137,18 @@ async def node_route(state):
     else:
         decision = "human_approval"
     console.print(f"  [green]✓[/green] decision=[bold]{decision}[/bold] (confidence={c:.0%})")
-    # TODO: emit an AuditEntry — this is the first row where `decision` is real.
+    # Dòng đầu tiên có `decision` thật: nhánh auto -> "auto", escalate -> "escalate",
+    # còn human_approval thì vẫn "pending" (đang chờ người).
+    await audit(state, AuditEntry(
+        agent_id=AGENT_ID,
+        action="route",
+        confidence=c,
+        risk_level=risk_level_for(c),
+        reviewer_id=None,
+        decision={"auto_approve": "auto", "escalate": "escalate"}.get(decision, "pending"),
+        reason=f"Định tuyến vào nhánh {decision} với confidence={c:.0%}",
+        execution_time_ms=int((time.monotonic() - t0) * 1000),
+    ))
     return {"decision": decision}
 
 
@@ -130,8 +156,19 @@ async def node_human_approval(state):
     t0 = time.monotonic()
     a = state["analysis"]
 
-    # TODO #1 — audit BEFORE the interrupt. No human has responded yet.
+    # TRƯỚC interrupt: chưa có người nào trả lời -> decision="pending", reviewer_id=None.
+    await audit(state, AuditEntry(
+        agent_id=AGENT_ID,
+        action="human_approval",
+        confidence=a.confidence,
+        risk_level=risk_level_for(a.confidence),
+        reviewer_id=None,
+        decision="pending",
+        reason=f"Yêu cầu duyệt: {a.summary[:200]}",
+        execution_time_ms=int((time.monotonic() - t0) * 1000),
+    ))
 
+    t1 = time.monotonic()
     resp = interrupt({
         "kind": "approval_request",
         "pr_url": state["pr_url"],
@@ -142,10 +179,20 @@ async def node_human_approval(state):
         "diff_preview": state["pr_diff"][:2000],
     })
 
-    # TODO #2 — audit AFTER resume. Now you know the reviewer's choice
-    #           (approve / reject / edit), their feedback, and who they are
-    #           (os.environ.get("GITHUB_USER")).
-    return {"human_choice": resp.get("choice"), "human_feedback": resp.get("feedback")}
+    # SAU resume: đã biết lựa chọn, góp ý và người duyệt.
+    choice, feedback = resp.get("choice"), resp.get("feedback")
+    waited_ms = int((time.monotonic() - t1) * 1000)
+    await audit(state, AuditEntry(
+        agent_id=AGENT_ID,
+        action="human_approval",
+        confidence=a.confidence,
+        risk_level=risk_level_for(a.confidence),
+        reviewer_id=os.environ.get("GITHUB_USER"),
+        decision=choice or "pending",
+        reason=f"{choice} sau {waited_ms} ms" + (f" — góp ý: {feedback}" if feedback else ""),
+        execution_time_ms=int((time.monotonic() - t1) * 1000),
+    ))
+    return {"human_choice": choice, "human_feedback": feedback}
 
 
 def _render_comment_body(state) -> str:
@@ -183,7 +230,18 @@ async def node_commit(state):
     else:
         console.print(f"  [yellow]·[/yellow] skipping comment (choice={state.get('human_choice')})")
         action = "rejected"
-    # TODO: emit an AuditEntry summarising what was committed (or rejected).
+    posted = action not in ("rejected", "commit_failed")
+    await audit(state, AuditEntry(
+        agent_id=AGENT_ID,
+        action="commit",
+        confidence=state["analysis"].confidence,
+        risk_level=risk_level_for(state["analysis"].confidence),
+        reviewer_id=(os.environ.get("GITHUB_USER")
+                     if state.get("human_choice") or state.get("escalation_answers") else None),
+        decision="approve" if posted else "reject",
+        reason=f"final_action={action}",
+        execution_time_ms=int((time.monotonic() - t0) * 1000),
+    ))
     return {"final_action": action}
 
 
@@ -192,7 +250,18 @@ async def node_auto_approve(state):
     t0 = time.monotonic()
     a = state["analysis"]
     action = _post(state)
-    # TODO: emit an AuditEntry — no human was involved, decision is "auto".
+    # Không có người tham gia -> reviewer_id=None, decision="auto".
+    # confidence >= AUTO_APPROVE_THRESHOLD nên risk_level luôn là "low".
+    await audit(state, AuditEntry(
+        agent_id=AGENT_ID,
+        action="auto_approve",
+        confidence=a.confidence,
+        risk_level=risk_level_for(a.confidence),
+        reviewer_id=None,
+        decision="auto",
+        reason=a.summary[:300],
+        execution_time_ms=int((time.monotonic() - t0) * 1000),
+    ))
     return {"final_action": f"auto_{action}"}
 
 
@@ -201,8 +270,21 @@ async def node_escalate(state):
     a = state["analysis"]
     questions = a.escalation_questions or ["What is the intent of this PR?"]
 
-    # TODO #1 — audit BEFORE the interrupt (reviewer hasn't answered yet).
+    # TRƯỚC interrupt: chưa có người nào trả lời -> decision="pending".
+    # (Nhánh escalate đã được ghi ở dòng `route` rồi; để "escalate" ở đây sẽ khiến
+    #  bản ghi lần hai khi resume không bị guard chặn -> audit trail bị trùng.)
+    await audit(state, AuditEntry(
+        agent_id=AGENT_ID,
+        action="escalate",
+        confidence=a.confidence,
+        risk_level=risk_level_for(a.confidence),
+        reviewer_id=None,
+        decision="pending",
+        reason="Escalate — câu hỏi gửi người duyệt: " + " | ".join(questions)[:300],
+        execution_time_ms=int((time.monotonic() - t0) * 1000),
+    ))
 
+    t1 = time.monotonic()
     answers = interrupt({
         "kind": "escalation",
         "pr_url": state["pr_url"],
@@ -213,7 +295,18 @@ async def node_escalate(state):
         "questions": questions,
     })
 
-    # TODO #2 — audit AFTER resume. You now have the answers.
+    # SAU resume: đã có câu trả lời + biết ai trả lời.
+    waited_ms = int((time.monotonic() - t1) * 1000)
+    await audit(state, AuditEntry(
+        agent_id=AGENT_ID,
+        action="escalate",
+        confidence=a.confidence,
+        risk_level=risk_level_for(a.confidence),
+        reviewer_id=os.environ.get("GITHUB_USER"),
+        decision="escalate",
+        reason=f"Người duyệt trả lời {len(answers)} câu hỏi sau {waited_ms} ms",
+        execution_time_ms=int((time.monotonic() - t1) * 1000),
+    ))
     return {"escalation_answers": answers}
 
 
@@ -221,16 +314,25 @@ async def node_synthesize(state):
     console.print("[cyan]→ synthesize[/cyan]")
     t0 = time.monotonic()
     qa = "\n".join(f"Q: {q}\nA: {a}" for q, a in (state.get("escalation_answers") or {}).items())
-    llm = get_llm().with_structured_output(PRAnalysis)
-    with console.status("[dim]LLM refining review with reviewer answers...[/dim]"):
+    llm = get_llm().with_structured_output(PRAnalysis, method=STRUCTURED_METHOD)
+    with console.status("[dim]LLM tổng hợp lại đánh giá theo câu trả lời...[/dim]"):
         refined: PRAnalysis = await llm.ainvoke([
-            {"role": "system", "content": "Refine review with reviewer answers."},
+            {"role": "system", "content": SYNTHESIZE_SYSTEM_PROMPT},
             {"role": "user", "content": f"Diff:\n{state['pr_diff']}\n\nQ&A:\n{qa}"},
         ])
     console.print(f"  [green]✓[/green] refined confidence={refined.confidence:.0%}")
-    # TODO: emit an AuditEntry — use the NEW confidence (refined.confidence),
-    #       which should be higher than the original analysis.
-    # node_commit will run next and post the refined review to the PR.
+    # confidence ở đây là của BẢN TINH CHỈNH (cao hơn bản gốc sau khi có câu trả lời).
+    await audit(state, AuditEntry(
+        agent_id=AGENT_ID,
+        action="synthesize",
+        confidence=refined.confidence,
+        risk_level=risk_level_for(refined.confidence),
+        reviewer_id=os.environ.get("GITHUB_USER"),
+        decision="pending",
+        reason=refined.confidence_reasoning,
+        execution_time_ms=int((time.monotonic() - t0) * 1000),
+    ))
+    # node_commit chạy tiếp và đăng bản tinh chỉnh lên PR.
     return {"analysis": refined}
 
 
